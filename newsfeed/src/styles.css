@@ -1,0 +1,18 @@
+/* You can add global styles to this file, and also import other style files */
+@import "~@angular/material/prebuilt-themes/indigo-pink.css";
+.row-container{
+    display:flex;
+    flex-direction: row;
+}
+
+.col-container{
+    display:flex;
+    flex-direction: column;
+}
+.form-container{
+    padding: 10px;
+}
+body {
+    margin:0px;
+    background-color: #efefef;
+}

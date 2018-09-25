@@ -1,0 +1,21 @@
+.main-form-container{
+    margin-top: 20px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 999;
+    width: 100%;
+ 
+}
+.form-container{
+    width: calc(100% - 300px);
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 5px 10px;
+    background-color: #ffffff;
+}
+.post-input {
+    width: 700px;
+    padding-left: 160px;
+}
