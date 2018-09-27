@@ -36,7 +36,6 @@ import {
 } from '@angular/material';
 
 import { AppComponent } from './app.component';
-import { NewPostComponent } from './new-post/new-post.component';
 import { TimelineComponent } from './timeline/timeline.component';
 import { PostService } from './post.service';
 
@@ -44,7 +43,6 @@ import { PostService } from './post.service';
 @NgModule({
   declarations: [
     AppComponent,
-    NewPostComponent,
     TimelineComponent
   ],
   imports: [

@@ -1,120 +1,96 @@
+// ./express-server/app.js
 import express from 'express';
-import cors from 'cors';
+import path from 'path';
 import bodyParser from 'body-parser';
+import logger from 'morgan';
 import mongoose from 'mongoose';
-import Post from './models/Post';
+import SourceMapSupport from 'source-map-support';
+import bb from 'express-busboy';
 import http from 'http';
 import socket from 'socket.io';
 
-const app = express();
-const router = express.Router();
+// import routes
+import postRoutes from './routes/post.server.route';
 
-//app setup
-app.use(cors());
-// app.options('*', cors());
-app.use(bodyParser.json());
+//import controller file
+import * as postController from './controllers/post.server.controller';
+
+// define our app using express
+const app = express();
+
+const server = http.Server(app);
+const io = socket(server);
+
+// express-busboy to parse multipart/form-data
+bb.extend(app);
+
+// socket.io connection
+io.on('connection', (socket) => {
+
+    console.log("Connected to Socket!!" + socket.id);
+
+    // Receiving Posts from client
+    socket.on('addPost', (Post) => {
+        console.log('socketData: ' + JSON.stringify(Post));
+        postController.addPost(io, Post);
+    });
+
+    // Receiving Updated Post from client
+    socket.on('updatePost', (Post, comment) => {
+        console.log('socketData: ' + JSON.stringify(Post));
+        postController.updatePost(io, Post, comment);
+    });
+
+    // Receiving Updated Todo from client
+    socket.on('updateComment', (Post, comment, reply) => {
+        console.log('socketData: ' + JSON.stringify(Post));
+        postController.updateComment(io, Post, comment, reply);
+    });
+
+    setInterval(postController.sendAge, 600000, io);
+})
+
+// allow-cors
 app.use(function (req, res, next) {
-    res.header("Access-Control-Allow-Headers", "content-type");
-    res.header("Access-Control-Allow-Methods", 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS')
     res.header("Access-Control-Allow-Origin", "*");
-    res.header("Content-Type", "application/json");
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
     next();
-});
+})
 
-let server = require('http').createServer(app);
+// configure app
+app.use(logger('dev'));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, 'public')));
 
-//mongoose setup
+
+// set the port
+const port = 4000;
+
+// connect to database
+mongoose.Promise = global.Promise;
 mongoose.connect('mongodb://localhost:27017/posts');
 const connection = mongoose.connection;
 connection.once('open', () => {
     console.log('MongoDB database connection established successfully!');
 });
 
-let io = require('socket.io')(server);
-io.on('connection', function (client) {
+// add Source Map Support
+SourceMapSupport.install();
 
-    console.log('user connected');
+app.use('/api', postRoutes);
 
-    client.on('disconnect', function () {
-        console.log("user disconnected")
-    });
+app.get('/', (req, res) => {
+    return res.end('Api working');
+});
 
-    client.on('room', function (data) {
-        client.join(data.roomId);
-        console.log(' Client joined the room and client id is ' + client.id);
-
-    });
-
-    client.on('message', (message) => {
-        console.log("Message Received: " + message);
-        io.emit('message', { type: 'new-message', text: message });
-    });
-
-    client.on('toBackEnd', function (data) {
-        client.in(data.roomId).emit('message', data);
-    })
+// catch 404
+app.use((req, res, next) => {
+    res.status(404).send('<h2 align=center>Page Not Found!</h2>');
 });
 
 
-router.route('/').get((req, res) => {
-    return res.json("h");
+// start the server
+server.listen(port, () => {
+    console.log(`App Server Listening at 4000`);
 });
-router.route('/posts').get((req, res) => {
-    Post.find((err, posts) => {
-        if (err)
-            console.log(err);
-        else
-            res.json(posts);
-    });
-});
-
-router.route('/posts/add').post((req, res) => {
-    console.log(req.body);
-    let post = new Post(req.body);
-    post.save()
-        .then(post => {
-            res.status(200).json({ 'post': 'Added successfully' });
-        })
-        .catch(err => {
-            res.status(400).send('Failed to create new record');
-        });
-});
-
-router.route('/posts/comment/:id').post((req, res) => {
-    Post.findById(req.params.id, (err, post) => {
-        if (!post)
-            return next(new Error('Could not find Post'));
-        else {
-            post.comments.push(req.body.comment)
-            post.save().then(post => {
-                res.json('Comment added!');
-            }).catch(err => {
-                res.status(400).send('Update failed');
-            });
-        }
-    });
-});
-
-router.route('/posts/reply/:id').post((req, res) => {
-    Post.findById(req.params.id, (err, post) => {
-        if (!post)
-            return next(new Error('Could not find Post'));
-        else {
-            // console.log("post is" + post);
-            post.comments.find(obj => {
-                return obj._id == req.body.comment_id
-            }).replies.push(req.body.reply)
-
-            post.save().then(post => {
-                res.json('reply added');
-            }).catch(err => {
-                res.status(400).send('Update failed');
-            });
-        }
-    });
-});
-
-app.use('/', router);
-
-app.listen(4000, () => console.log(`Express server running on port 4000`));

@@ -6,17 +6,36 @@ import { environment } from '../environments/environment';
 @Injectable()
 export class PostService {
 
-  ApiUrl: string;
+  ApiUrl = environment.apiUrl;
 
   constructor(private http: HttpClient) {
-    this.ApiUrl = environment.apiUrl + 'posts';
   }
 
-  getPosts(): Observable<any> {
-    return this.http.get<any>(this.ApiUrl, {});
+  // getPosts(): Observable<any> {
+  //   return this.http.get<any>(this.ApiUrl, {});
+  // }
+
+  getPosts(): Promise<any> {
+    return this.http.get(this.ApiUrl)
+      .toPromise()
+      .then()
+      .catch(this.handleError)
   }
-  addPost(Post): Observable<any> {
-    return this.http.post<any>(this.ApiUrl + '/add', Post);
+
+  createPost(post: any, socket: any): void {
+    socket.emit('addPost', post);
+  }
+
+  updatePost(post: any, comment: any, socket: any): void {
+    socket.emit('updatePost', post, comment);
+  }
+  updateComment(post: any, comment: any, reply: any, socket: any): void {
+    socket.emit('updateComment', post, comment, reply);
+  }
+
+  private handleError(error: any): Promise<any> {
+    console.error('An error occurred', error); // for development purposes only
+    return Promise.reject(error.message || error);
   }
 
 }
