@@ -1,6 +1,6 @@
 # Newsfeed
 
-Install mongodb
+Install mongodb,
 npm install
 
 1) To run Node.js backend
