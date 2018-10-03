@@ -1,11 +1,9 @@
 .main-form-container{
   margin-top: 20px;
-  position: fixed;
   top: 0;
   left: 0;
   z-index: 999;
   width: 100%;
-
 }
 .form-container{
   width: calc(100% - 300px);
@@ -27,9 +25,8 @@ h1{
 }
 .timeline{
   overflow: scroll;
-  height: 100%;
+  height: calc(100% - 100px);
   width: 100%;
-  top: 100px;
   position: fixed;
 }
 .list-item{
